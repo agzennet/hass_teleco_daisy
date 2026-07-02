@@ -15,9 +15,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from teleco_daisy import DaisyAwningCover, DaisyShadeCover, DaisySlatsCover
-
 from .const import DOMAIN
+from .lib import (
+    DaisyAwningCover,
+    DaisyRetractableSlatsCover,
+    DaisyShadeCover,
+    DaisySlatsCover,
+)
 
 _LOGGER = logging.getLogger(__name__)
 

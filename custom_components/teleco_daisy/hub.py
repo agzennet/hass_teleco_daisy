@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from homeassistant.core import HomeAssistant
 
-from teleco_daisy import DaisyCover, DaisyHeater4CH, DaisyLight, TelecoDaisy
+from .lib import DaisyCover, DaisyHeater4CH, DaisyLight, TelecoDaisy
 
 
 class DaisyHub(TelecoDaisy):

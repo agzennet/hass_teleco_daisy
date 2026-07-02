@@ -9,9 +9,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from teleco_daisy import DaisyHeater4CH
-
 from .const import DOMAIN
+from .lib import DaisyHeater4CH
 
 _LOGGER = logging.getLogger(__name__)
 

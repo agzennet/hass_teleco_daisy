@@ -6,8 +6,7 @@ exclude = [
     ".github",
 ]
 
-[lint]
-select = [
+lint.select = [
     "B",
     "C",
     "E",
@@ -20,4 +19,9 @@ select = [
     "PLC",
     "RUF",
     "UP",
+]
+
+lint.ignore = [
+    "N803",
+    "N815",
 ]
