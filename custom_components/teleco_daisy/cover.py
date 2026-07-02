@@ -37,7 +37,11 @@ async def async_setup_entry(
 
 class TelecoDaisyCover(CoverEntity):
     def __init__(
-        self, cover: DaisyAwningCover | DaisyShadeCover | DaisySlatsCover
+        self,
+        cover: DaisyAwningCover
+        | DaisyShadeCover
+        | DaisySlatsCover
+        | DaisyRetractableSlatsCover,
     ) -> None:
         self._cover = cover
 
@@ -68,6 +72,17 @@ class TelecoDaisyCover(CoverEntity):
                 CoverEntityFeature.OPEN
                 | CoverEntityFeature.CLOSE
                 | CoverEntityFeature.STOP
+            )
+        elif isinstance(cover, DaisyRetractableSlatsCover):
+            self._attr_device_class = CoverDeviceClass.AWNING
+            self._attr_supported_features = (
+                CoverEntityFeature.OPEN
+                | CoverEntityFeature.CLOSE
+                | CoverEntityFeature.STOP
+                | CoverEntityFeature.OPEN_TILT
+                | CoverEntityFeature.CLOSE_TILT
+                | CoverEntityFeature.SET_TILT_POSITION
+                | CoverEntityFeature.STOP_TILT
             )
 
     @property
