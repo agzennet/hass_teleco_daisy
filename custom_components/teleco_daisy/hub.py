@@ -25,7 +25,7 @@ class TelecoDaisyHub:
             _LOGGER,
             name="Teleco Daisy Update",
             update_method=self.async_update_data,
-            update_interval=timedelta(seconds=30),
+            update_interval=timedelta(seconds=60),
         )
 
     async def async_setup(self) -> bool:

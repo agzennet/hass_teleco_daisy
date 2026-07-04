@@ -8,6 +8,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .lib import DaisyHeater4CH
@@ -24,15 +25,17 @@ async def async_setup_entry(
 
     async_add_entities(
         [
-            TelecoDaisyClimateEntity(device)
+            TelecoDaisyClimateEntity(hub.coordinator, device)
             for device in hub.devices
             if isinstance(device, DaisyHeater4CH)
         ]
     )
 
 
-class TelecoDaisyClimateEntity(ClimateEntity):
-    def __init__(self, heater: DaisyHeater4CH) -> None:
+class TelecoDaisyClimateEntity(CoordinatorEntity, ClimateEntity):
+    def __init__(self, coordinator, heater: DaisyHeater4CH) -> None:
+        super().__init__(coordinator)
+
         self._heater = heater
 
         self._attr_unique_id = str(heater.idInstallationDevice)
@@ -58,9 +61,11 @@ class TelecoDaisyClimateEntity(ClimateEntity):
 
     async def async_turn_on(self):
         await self._heater.turn_on()
+        await self._heater.update_state()
 
     async def async_turn_off(self):
         await self._heater.turn_off()
+        await self._heater.update_state()
 
     async def async_set_preset_mode(self, preset_mode: Literal["50", "75", "100"]):
         await self._heater.set_level(preset_mode)

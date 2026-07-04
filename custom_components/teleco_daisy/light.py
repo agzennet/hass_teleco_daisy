@@ -13,6 +13,7 @@ from homeassistant.components.light import (
 )
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util.color import brightness_to_value, value_to_brightness
 
 from .const import DOMAIN
@@ -34,18 +35,20 @@ async def async_setup_entry(
         hub.update(config_entry.options)
 
     async_add_entities(
-        TelecoDaisyLight(light)
+        TelecoDaisyLight(hub.coordinator, light)
         for light in hub.devices
         if isinstance(light, DaisyLight)
     )
 
 
-class TelecoDaisyLight(LightEntity):
+class TelecoDaisyLight(CoordinatorEntity, LightEntity):
     entity_description = LightEntityDescription(
         key="teleco_daisy_light", has_entity_name=True, name=None
     )
 
-    def __init__(self, light: DaisyLight) -> None:
+    def __init__(self, coordinator, light: DaisyLight) -> None:
+        super().__init__(coordinator)
+
         self._light = light
         self._name = self._light.label
 
@@ -91,6 +94,10 @@ class TelecoDaisyLight(LightEntity):
             return self._light.rgb or (255, 255, 255)
         return None
 
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._light.turn_off()
+        await self._light.update_state()
+
     async def async_turn_on(self, **kwargs: Any) -> None:
         if isinstance(self._light, DaisyRGBLight):
             await self._turn_on_rgb(**kwargs)
@@ -123,11 +130,3 @@ class TelecoDaisyLight(LightEntity):
         await self._light.set_brightness(
             int(brightness_to_value(BRIGHTNESS_SCALE, brightness)),
         )
-
-    async def async_turn_off(self, **kwargs: Any) -> None:
-        await self._light.turn_off()
-        await self._light.update_state()
-
-    async def async_update(self) -> None:
-        stati = await self._light.update_state()
-        _LOGGER.debug(f"Light update return value: {stati}")
