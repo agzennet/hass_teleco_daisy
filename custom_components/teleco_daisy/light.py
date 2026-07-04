@@ -96,14 +96,14 @@ class TelecoDaisyLight(CoordinatorEntity, LightEntity):
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self._light.turn_off()
-        await self._light.update_state()
+        await self._update_state()
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         if isinstance(self._light, DaisyRGBLight):
             await self._turn_on_rgb(**kwargs)
         else:
             await self._turn_on_white(**kwargs)
-        await self._light.update_state()
+        await self._update_state()
 
     async def _turn_on_rgb(self, **kwargs: Any) -> None:
         if new_rgb := kwargs.get(ATTR_RGB_COLOR):
@@ -130,3 +130,7 @@ class TelecoDaisyLight(CoordinatorEntity, LightEntity):
         await self._light.set_brightness(
             int(brightness_to_value(BRIGHTNESS_SCALE, brightness)),
         )
+
+    async def _update_state(self):
+        await self._light.update_state()
+        self.async_write_ha_state()

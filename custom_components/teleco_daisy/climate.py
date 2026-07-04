@@ -61,11 +61,11 @@ class TelecoDaisyClimateEntity(CoordinatorEntity, ClimateEntity):
 
     async def async_turn_on(self):
         await self._heater.turn_on()
-        await self._heater.update_state()
+        await self._update_state()
 
     async def async_turn_off(self):
         await self._heater.turn_off()
-        await self._heater.update_state()
+        await self._update_state()
 
     async def async_set_preset_mode(self, preset_mode: Literal["50", "75", "100"]):
         await self._heater.set_level(preset_mode)
@@ -76,3 +76,7 @@ class TelecoDaisyClimateEntity(CoordinatorEntity, ClimateEntity):
         # FIXME This is a workaround for the fact that teleco_daisy does not
         #  report the current preset mode
         return self._preset_mode
+
+    async def _update_state(self):
+        await self._heater.update_state()
+        self.async_write_ha_state()

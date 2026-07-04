@@ -120,27 +120,27 @@ class TelecoDaisyCover(CoordinatorEntity, CoverEntity):
 
     async def async_open_cover(self, **kwargs: Any) -> None:
         await self._cover.open_cover()
-        await self._cover.update_state()
+        await self._update_state()
 
     async def async_close_cover(self, **kwargs: Any) -> None:
         await self._cover.close_cover()
-        await self._cover.update_state()
+        await self._update_state()
 
     async def async_stop_cover(self, **kwargs: Any) -> None:
         await self._cover.stop_cover()
-        await self._cover.update_state()
+        await self._update_state()
 
     async def async_open_cover_tilt(self, **kwargs: Any) -> None:
         await self._cover.open_cover()
-        await self._cover.update_state()
+        await self._update_state()
 
     async def async_close_cover_tilt(self, **kwargs: Any) -> None:
         await self._cover.close_cover()
-        await self._cover.update_state()
+        await self._update_state()
 
     async def async_stop_cover_tilt(self, **kwargs: Any) -> None:
         await self._cover.stop_cover()
-        await self._cover.update_state()
+        await self._update_state()
 
     async def async_set_cover_position(self, **kwargs: Any) -> None:
         await self._async_set_cover_position(kwargs[ATTR_POSITION])
@@ -157,4 +157,8 @@ class TelecoDaisyCover(CoordinatorEntity, CoverEntity):
             await self._cover.open_cover("66")
         else:
             await self._cover.open_cover("100")
+        await self._update_state()
+
+    async def _update_state(self):
         await self._cover.update_state()
+        self.async_write_ha_state()

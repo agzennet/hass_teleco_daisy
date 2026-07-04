@@ -1,6 +1,6 @@
 [project]
 name = "hass-teleco-daisy"
-version = "0.1.12.3"
+version = "0.2.1"
 description = "Home Assistant custom component for Teleco Automation Daisy"
 readme = "README.md"
 requires-python = ">=3.14"
@@ -13,5 +13,5 @@ dependencies = [
 [dependency-groups]
 dev = [
     "homeassistant>=2026",
-    "ruff>=0.12.4",
+    "ruff>=0.15",
 ]
