@@ -1,43 +1,58 @@
-from __future__ import annotations
+import logging
+from datetime import timedelta
 
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .lib import DaisyCover, DaisyHeater4CH, DaisyLight, TelecoDaisy
+from .lib import TelecoDaisy
+
+_LOGGER = logging.getLogger(__name__)
 
 
-class DaisyHub(TelecoDaisy):
-    manufacturer = "Teleco Automation"
-    lights: list[DaisyLight]
-    covers: list[DaisyCover]
-    heaters: list[DaisyHeater4CH]
+class TelecoDaisyHub:
+    def __init__(self, hass: HomeAssistant, email: str, password: str):
+        self.hass = hass
 
-    def __init__(self, hass: HomeAssistant, email: str, password: str) -> None:
-        super().__init__(email, password)
+        self.client = TelecoDaisy(
+            email=email, password=password, session=async_get_clientsession(hass)
+        )
 
-        self._hass = hass
-        self._name = "Teleco DaisyHub"
-        self._id = "Teleco DaisyHub".lower()
+        self.devices = []
 
-        self.online = True
+        self.coordinator = DataUpdateCoordinator(
+            hass,
+            _LOGGER,
+            name="Teleco Daisy Update",
+            update_method=self.async_update_data,
+            update_interval=timedelta(seconds=30),
+        )
 
-    def fetch_entities(self):
-        self.lights = []
-        self.covers = []
-        self.heaters = []
-        for installation in self.get_account_installation_list():
-            for room in self.get_room_list(installation):
-                for device in room.deviceList:
-                    if isinstance(device, DaisyLight):
-                        self.lights += [device]
-                    elif isinstance(device, DaisyCover):
-                        self.covers += [device]
-                    elif isinstance(device, DaisyHeater4CH):
-                        self.heaters += [device]
+    async def async_setup(self) -> bool:
+        try:
+            await self.client.login()
+            installations = await self.client.get_account_installation_list()
 
-    @property
-    def hub_id(self) -> str:
-        return self._id
+            if not installations:
+                _LOGGER.error("No installations found for this account.")
+                return False
 
-    async def test_connection(self) -> bool:
-        # TODO
-        return True
+            for installation in installations:
+                rooms = await self.client.get_room_list(installation)
+
+                for room in rooms:
+                    self.devices.extend(room.deviceList)
+
+            return True
+
+        except Exception as err:
+            _LOGGER.error("Failed to connect to Teleco Daisy: %s", err)
+            return False
+
+    async def async_update_data(self):
+        try:
+            for device in self.devices:
+                await device.update_state()
+            return self.devices
+        except Exception as err:
+            raise UpdateFailed(f"Error communicating with Daisy API: {err}") from err

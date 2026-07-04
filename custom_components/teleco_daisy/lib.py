@@ -219,6 +219,9 @@ class DaisyLight(DaisyDevice):
                 self.is_on = status.statusValue == "ON"
         return stati
 
+    async def set_brightness(self, brightness: int):
+        raise NotImplementedError
+
     async def _turn_on(self, specific_params: dict):
         return await self.command(
             {"commandAction": "POWER", "commandParam": "ON"} | specific_params

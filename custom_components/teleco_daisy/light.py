@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, cast
 
 from homeassistant import config_entries, core
 from homeassistant.components.light import (
@@ -16,7 +16,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util.color import brightness_to_value, value_to_brightness
 
 from .const import DOMAIN
-from .lib import DaisyRGBLight, DaisyWhite4LevelLight
+from .lib import DaisyLight, DaisyRGBLight, DaisyWhite4LevelLight
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,7 +33,11 @@ async def async_setup_entry(
     if config_entry.options:
         hub.update(config_entry.options)
 
-    async_add_entities(TelecoDaisyLight(light) for light in hub.lights)
+    async_add_entities(
+        TelecoDaisyLight(light)
+        for light in hub.devices
+        if isinstance(light, DaisyLight)
+    )
 
 
 class TelecoDaisyLight(LightEntity):
@@ -41,7 +45,7 @@ class TelecoDaisyLight(LightEntity):
         key="teleco_daisy_light", has_entity_name=True, name=None
     )
 
-    def __init__(self, light: DaisyRGBLight | DaisyWhite4LevelLight) -> None:
+    def __init__(self, light: DaisyLight) -> None:
         self._light = light
         self._name = self._light.label
 
@@ -69,7 +73,7 @@ class TelecoDaisyLight(LightEntity):
         return self._name
 
     @property
-    def is_on(self) -> bool:
+    def is_on(self) -> bool | None:
         return self._light.is_on
 
     @property
@@ -87,14 +91,14 @@ class TelecoDaisyLight(LightEntity):
             return self._light.rgb or (255, 255, 255)
         return None
 
-    def turn_on(self, **kwargs: Any) -> None:
+    async def async_turn_on(self, **kwargs: Any) -> None:
         if isinstance(self._light, DaisyRGBLight):
-            self._turn_on_rgb(**kwargs)
+            await self._turn_on_rgb(**kwargs)
         else:
-            self._turn_on_white(**kwargs)
-        self._light.update_state()
+            await self._turn_on_white(**kwargs)
+        await self._light.update_state()
 
-    def _turn_on_rgb(self, **kwargs: Any) -> None:
+    async def _turn_on_rgb(self, **kwargs: Any) -> None:
         if new_rgb := kwargs.get(ATTR_RGB_COLOR):
             rgb_col = (int(new_rgb[0]), int(new_rgb[1]), int(new_rgb[2]))
         else:
@@ -105,25 +109,25 @@ class TelecoDaisyLight(LightEntity):
         else:
             brightness = self.brightness
 
-        self._light.set_rgb_and_brightness(
+        await cast(DaisyRGBLight, self._light).set_rgb_and_brightness(
             rgb=rgb_col,
             brightness=int(brightness_to_value(BRIGHTNESS_SCALE, brightness)),
         )
 
-    def _turn_on_white(self, **kwargs: Any) -> None:
+    async def _turn_on_white(self, **kwargs: Any) -> None:
         if new_bright := kwargs.get(ATTR_BRIGHTNESS):
             brightness = int(new_bright)
         else:
             brightness = self.brightness
 
-        self._light.set_brightness(
+        await self._light.set_brightness(
             int(brightness_to_value(BRIGHTNESS_SCALE, brightness)),
         )
 
-    def turn_off(self, **kwargs: Any) -> None:
-        self._light.turn_off()
-        self._light.update_state()
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._light.turn_off()
+        await self._light.update_state()
 
-    def update(self) -> None:
-        stati = self._light.update_state()
+    async def async_update(self) -> None:
+        stati = await self._light.update_state()
         _LOGGER.debug(f"Light update return value: {stati}")

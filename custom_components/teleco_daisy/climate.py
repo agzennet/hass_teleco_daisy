@@ -21,7 +21,14 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     hub = hass.data[DOMAIN][config_entry.entry_id]
-    async_add_entities([TelecoDaisyClimateEntity(heater) for heater in hub.heaters])
+
+    async_add_entities(
+        [
+            TelecoDaisyClimateEntity(device)
+            for device in hub.devices
+            if isinstance(device, DaisyHeater4CH)
+        ]
+    )
 
 
 class TelecoDaisyClimateEntity(ClimateEntity):
@@ -49,14 +56,14 @@ class TelecoDaisyClimateEntity(ClimateEntity):
             manufacturer="Teleco Automation",
         )
 
-    def turn_on(self):
-        self._heater.turn_on()
+    async def async_turn_on(self):
+        await self._heater.turn_on()
 
-    def turn_off(self):
-        self._heater.turn_off()
+    async def async_turn_off(self):
+        await self._heater.turn_off()
 
-    def set_preset_mode(self, preset_mode: Literal["50", "75", "100"]):
-        self._heater.set_level(preset_mode)
+    async def async_set_preset_mode(self, preset_mode: Literal["50", "75", "100"]):
+        await self._heater.set_level(preset_mode)
         self._preset_mode = preset_mode
 
     @property

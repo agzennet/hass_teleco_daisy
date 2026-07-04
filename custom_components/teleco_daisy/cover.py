@@ -18,6 +18,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN
 from .lib import (
     DaisyAwningCover,
+    DaisyCover,
     DaisyRetractableSlatsCover,
     DaisyShadeCover,
     DaisySlatsCover,
@@ -32,17 +33,18 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     hub = hass.data[DOMAIN][config_entry.entry_id]
-    async_add_entities([TelecoDaisyCover(cover) for cover in hub.covers])
+
+    async_add_entities(
+        [
+            TelecoDaisyCover(device)
+            for device in hub.devices
+            if isinstance(device, DaisyCover)
+        ]
+    )
 
 
 class TelecoDaisyCover(CoverEntity):
-    def __init__(
-        self,
-        cover: DaisyAwningCover
-        | DaisyShadeCover
-        | DaisySlatsCover
-        | DaisyRetractableSlatsCover,
-    ) -> None:
+    def __init__(self, cover: DaisyCover) -> None:
         self._cover = cover
 
         self._attr_unique_id = str(cover.idInstallationDevice)
@@ -97,8 +99,8 @@ class TelecoDaisyCover(CoverEntity):
     def is_closed(self) -> bool | None:
         return self._cover.is_closed
 
-    def update(self) -> None:
-        stati = self._cover.update_state()
+    async def async_update(self) -> None:
+        stati = await self._cover.update_state()
         _LOGGER.debug(f"Cover update return value: {stati}")
 
     # @property
@@ -112,29 +114,29 @@ class TelecoDaisyCover(CoverEntity):
     #     return self._roller.moving > 0
     #
 
-    def open_cover(self, **kwargs: Any) -> None:
-        self._cover.open_cover()
-        self.update()
+    async def async_open_cover(self, **kwargs: Any) -> None:
+        await self._cover.open_cover()
+        await self.async_update()
 
-    def close_cover(self, **kwargs: Any) -> None:
-        self._cover.close_cover()
-        self.update()
+    async def async_close_cover(self, **kwargs: Any) -> None:
+        await self._cover.close_cover()
+        await self.async_update()
 
-    def stop_cover(self, **kwargs: Any) -> None:
-        self._cover.stop_cover()
-        self.update()
+    async def async_stop_cover(self, **kwargs: Any) -> None:
+        await self._cover.stop_cover()
+        await self.async_update()
 
-    def open_cover_tilt(self, **kwargs: Any) -> None:
-        self._cover.open_cover()
-        self.update()
+    async def async_open_cover_tilt(self, **kwargs: Any) -> None:
+        await self._cover.open_cover()
+        await self.async_update()
 
-    def close_cover_tilt(self, **kwargs: Any) -> None:
-        self._cover.close_cover()
-        self.update()
+    async def async_close_cover_tilt(self, **kwargs: Any) -> None:
+        await self._cover.close_cover()
+        await self.async_update()
 
-    def stop_cover_tilt(self, **kwargs: Any) -> None:
-        self._cover.stop_cover()
-        self.update()
+    async def async_stop_cover_tilt(self, **kwargs: Any) -> None:
+        await self._cover.stop_cover()
+        await self.async_update()
 
     @property
     def current_cover_position(self) -> int | None:
@@ -144,19 +146,19 @@ class TelecoDaisyCover(CoverEntity):
     def current_cover_tilt_position(self) -> int | None:
         return getattr(self._cover, "position", None)
 
-    def _set_cover_position(self, position: int) -> None:
+    async def _async_set_cover_position(self, position: int) -> None:
         if position <= 15:
-            self._cover.close_cover()
+            await self._cover.close_cover()
         elif 15 < position <= 48:
-            self._cover.open_cover("33")
+            await self._cover.open_cover("33")
         elif 48 < position <= 81:
-            self._cover.open_cover("66")
+            await self._cover.open_cover("66")
         else:
-            self._cover.open_cover("100")
-        self.update()
+            await self._cover.open_cover("100")
+        await self.async_update()
 
-    def set_cover_position(self, **kwargs: Any) -> None:
-        self._set_cover_position(kwargs[ATTR_POSITION])
+    async def async_set_cover_position(self, **kwargs: Any) -> None:
+        await self._async_set_cover_position(kwargs[ATTR_POSITION])
 
-    def set_cover_tilt_position(self, **kwargs: Any) -> None:
-        self._set_cover_position(kwargs[ATTR_TILT_POSITION])
+    async def async_set_cover_tilt_position(self, **kwargs: Any) -> None:
+        await self._async_set_cover_position(kwargs[ATTR_TILT_POSITION])
